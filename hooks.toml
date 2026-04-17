@@ -1,0 +1,18 @@
+# Per-source hooks for blueprints migrated out of `shared/phoenix-liveview/`.
+# Blueprint ids resolve against the `phoenix-liveview` source prefix.
+# First match wins — more specific patterns go before general ones.
+
+# ---------- Oban workers ----------
+#
+# Implementation and testing are merged into one blueprint — both .ex and
+# _test.exs files get the same reference.
+
+[[pre-write]]
+pattern   = "_oban_worker(_test)?\\.(ex|exs)$"
+blueprint = "phoenix-liveview/libs/oban-worker"
+
+# ---------- Anubis MCP tools ----------
+
+[[pre-write]]
+pattern   = "(lib|test)/platform/mcp/tools/"
+blueprint = "phoenix-liveview/libs/anubis-mcp"
