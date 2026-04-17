@@ -70,3 +70,37 @@ blueprint = "phoenix-liveview/javascript/javascript"
 [[pre-write]]
 pattern   = "assets/(vitest\\.config\\.ts|tsconfig\\.json)$"
 blueprint = "phoenix-liveview/javascript/testing-setup"
+
+# ============================================================================
+# Post-write: warn when a source file expected to have a test is missing one.
+#
+# Uniform derivation: lib/<path>.ex → test/<path>_test.exs.
+# Fires only for the three categories that carry their own tests:
+# LiveViews, Oban workers, and context public APIs. Schemas are tested
+# via their context, so they don't get a warning.
+#
+# Assumes the `Platform` / `PlatformWeb` root-module convention (see
+# core/context.md). Projects that deviate can override in their own
+# hooks.toml.
+# ============================================================================
+
+# ---------- LiveViews ----------
+
+[[post-write]]
+pattern           = "^lib/(.+)_live\\.ex$"
+text              = "No test file found. Expected: test/${1}_live_test.exs — write the test before moving on."
+when_file_missing = "test/${1}_live_test.exs"
+
+# ---------- Oban workers ----------
+
+[[post-write]]
+pattern           = "^lib/(.+)_oban_worker\\.ex$"
+text              = "No test file found. Expected: test/${1}_oban_worker_test.exs — write the test before moving on."
+when_file_missing = "test/${1}_oban_worker_test.exs"
+
+# ---------- Context public API (filename == parent folder) ----------
+
+[[post-write]]
+pattern           = "^lib/platform/([^/]+)/([^/]+)/\\2\\.ex$"
+text              = "No test file found. Expected: test/platform/${1}/${2}/${2}_test.exs — write the test before moving on."
+when_file_missing = "test/platform/${1}/${2}/${2}_test.exs"
