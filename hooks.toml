@@ -9,13 +9,26 @@
 
 [[pre-write]]
 pattern   = "_live(_test)?\\.(ex|exs)$"
-blueprint = "phoenix-liveview/liveview/liveview"
+blueprint = "phoenix-liveview/core/liveview"
 
 # ---------- Components ----------
 
 [[pre-write]]
 pattern   = "lib/platform_web/components/[^/]+\\.ex$"
 blueprint = "phoenix-liveview/core/components"
+
+# ---------- Controllers ----------
+#
+# Non-HTML endpoints only (JSON/text/XML APIs, redirects, auth-session,
+# sitemap, health). HTML responses always go through LiveView.
+
+[[pre-write]]
+pattern   = "lib/platform_web/controllers/.*_controller(_test)?\\.(ex|exs)$"
+blueprint = "phoenix-liveview/core/controller"
+
+[[pre-write]]
+pattern   = "test/platform_web/controllers/.*_controller_test\\.exs$"
+blueprint = "phoenix-liveview/core/controller"
 
 # ---------- Context modules ----------
 #
