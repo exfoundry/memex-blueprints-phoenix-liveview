@@ -16,3 +16,22 @@ blueprint = "phoenix-liveview/libs/oban-worker"
 [[pre-write]]
 pattern   = "(lib|test)/platform/mcp/tools/"
 blueprint = "phoenix-liveview/libs/anubis-mcp"
+
+# ---------- Context modules ----------
+#
+# Context public API = lib/platform/<domain>/<ctx>/<ctx>.ex
+# Implementation + testing rules are combined in a single blueprint.
+
+[[pre-write]]
+pattern   = "test/platform/[^/]+/[^/]+/[^/]+_test\\.exs$"
+blueprint = "phoenix-liveview/core/context"
+
+[[pre-write]]
+pattern   = "lib/platform/[^/]+/[^/]+/[^/]+\\.ex$"
+blueprint = "phoenix-liveview/core/context"
+
+# ---------- Migrations (SQLite) ----------
+
+[[pre-write]]
+pattern   = "priv/repo/migrations/.*\\.exs$"
+blueprint = "phoenix-liveview/core/migrations-sqlite"
