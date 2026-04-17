@@ -1,21 +1,21 @@
-# Per-source hooks for blueprints migrated out of `shared/phoenix-liveview/`.
+# Per-source hooks for phoenix-liveview blueprints.
 # Blueprint ids resolve against the `phoenix-liveview` source prefix.
 # First match wins — more specific patterns go before general ones.
 
-# ---------- Oban workers ----------
+# ---------- LiveViews ----------
 #
-# Implementation and testing are merged into one blueprint — both .ex and
-# _test.exs files get the same reference.
+# Implementation + testing rules live in a single blueprint. Both
+# *_live.ex and *_live_test.exs match the same file.
 
 [[pre-write]]
-pattern   = "_oban_worker(_test)?\\.(ex|exs)$"
-blueprint = "phoenix-liveview/libs/oban-worker"
+pattern   = "_live(_test)?\\.(ex|exs)$"
+blueprint = "phoenix-liveview/liveview/liveview"
 
-# ---------- Anubis MCP tools ----------
+# ---------- Components ----------
 
 [[pre-write]]
-pattern   = "(lib|test)/platform/mcp/tools/"
-blueprint = "phoenix-liveview/libs/anubis-mcp"
+pattern   = "lib/platform_web/components/[^/]+\\.ex$"
+blueprint = "phoenix-liveview/core/components"
 
 # ---------- Context modules ----------
 #
@@ -35,3 +35,25 @@ blueprint = "phoenix-liveview/core/context"
 [[pre-write]]
 pattern   = "priv/repo/migrations/.*\\.exs$"
 blueprint = "phoenix-liveview/core/migrations-sqlite"
+
+# ---------- Oban workers ----------
+
+[[pre-write]]
+pattern   = "_oban_worker(_test)?\\.(ex|exs)$"
+blueprint = "phoenix-liveview/libs/oban-worker"
+
+# ---------- Anubis MCP tools ----------
+
+[[pre-write]]
+pattern   = "(lib|test)/platform/mcp/tools/"
+blueprint = "phoenix-liveview/libs/anubis-mcp"
+
+# ---------- JavaScript / TypeScript ----------
+
+[[pre-write]]
+pattern   = "assets/js/.*\\.(ts|js)$"
+blueprint = "phoenix-liveview/javascript/javascript"
+
+[[pre-write]]
+pattern   = "assets/(vitest\\.config\\.ts|tsconfig\\.json)$"
+blueprint = "phoenix-liveview/javascript/testing-setup"
