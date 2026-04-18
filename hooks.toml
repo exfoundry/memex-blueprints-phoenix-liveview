@@ -43,6 +43,12 @@ blueprint = "phoenix-liveview/core/context"
 pattern   = "lib/platform/[^/]+/[^/]+/[^/]+\\.ex$"
 blueprint = "phoenix-liveview/core/context"
 
+# ---------- Seeds ----------
+
+[[pre-write]]
+pattern   = "priv/repo/seeds\\.exs$"
+blueprint = "phoenix-liveview/core/seeds"
+
 # ---------- Migrations (SQLite) ----------
 
 [[pre-write]]
