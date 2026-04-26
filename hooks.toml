@@ -97,6 +97,11 @@ pattern           = "^lib/(.+)_live\\.ex$"
 text              = "No test file found. Expected: test/${1}_live_test.exs — write the test before moving on."
 when_file_missing = "test/${1}_live_test.exs"
 
+[[post-write]]
+pattern          = "^lib/(.+)_live\\.ex$"
+text             = "Test file exists — did you write tests for these changes?"
+when_file_exists = "test/${1}_live_test.exs"
+
 # ---------- Oban workers ----------
 
 [[post-write]]
@@ -104,9 +109,19 @@ pattern           = "^lib/(.+)_oban_worker\\.ex$"
 text              = "No test file found. Expected: test/${1}_oban_worker_test.exs — write the test before moving on."
 when_file_missing = "test/${1}_oban_worker_test.exs"
 
+[[post-write]]
+pattern          = "^lib/(.+)_oban_worker\\.ex$"
+text             = "Test file exists — did you write tests for these changes?"
+when_file_exists = "test/${1}_oban_worker_test.exs"
+
 # ---------- Context public API (filename == parent folder) ----------
 
 [[post-write]]
 pattern           = "^lib/platform/([^/]+)/([^/]+)/\\2\\.ex$"
 text              = "No test file found. Expected: test/platform/${1}/${2}/${2}_test.exs — write the test before moving on."
 when_file_missing = "test/platform/${1}/${2}/${2}_test.exs"
+
+[[post-write]]
+pattern          = "^lib/platform/([^/]+)/([^/]+)/\\2\\.ex$"
+text             = "Test file exists — did you write tests for these changes?"
+when_file_exists = "test/platform/${1}/${2}/${2}_test.exs"
