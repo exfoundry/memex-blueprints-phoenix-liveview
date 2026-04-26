@@ -1,5 +1,5 @@
-# Per-source hooks for phoenix-liveview blueprints.
-# Blueprint ids resolve against the `phoenix-liveview` source prefix.
+# Per-source hooks for phoenix-framework blueprints.
+# Blueprint ids resolve against the `phoenix-framework` source prefix.
 # First match wins — more specific patterns go before general ones.
 
 # ---------- LiveViews ----------
@@ -9,13 +9,13 @@
 
 [[pre-write]]
 pattern   = "_live(_test)?\\.(ex|exs)$"
-blueprint = "phoenix-liveview/core/liveview"
+blueprint = "phoenix-framework/core/liveview"
 
 # ---------- Components ----------
 
 [[pre-write]]
 pattern   = "lib/platform_web/components/[^/]+\\.ex$"
-blueprint = "phoenix-liveview/core/components"
+blueprint = "phoenix-framework/core/components"
 
 # ---------- Controllers ----------
 #
@@ -24,11 +24,11 @@ blueprint = "phoenix-liveview/core/components"
 
 [[pre-write]]
 pattern   = "lib/platform_web/controllers/.*_controller(_test)?\\.(ex|exs)$"
-blueprint = "phoenix-liveview/core/controller"
+blueprint = "phoenix-framework/core/controller"
 
 [[pre-write]]
 pattern   = "test/platform_web/controllers/.*_controller_test\\.exs$"
-blueprint = "phoenix-liveview/core/controller"
+blueprint = "phoenix-framework/core/controller"
 
 # ---------- Context modules ----------
 #
@@ -37,45 +37,45 @@ blueprint = "phoenix-liveview/core/controller"
 
 [[pre-write]]
 pattern   = "test/platform/[^/]+/[^/]+/[^/]+_test\\.exs$"
-blueprint = "phoenix-liveview/core/context"
+blueprint = "phoenix-framework/core/context"
 
 [[pre-write]]
 pattern   = "lib/platform/[^/]+/[^/]+/[^/]+\\.ex$"
-blueprint = "phoenix-liveview/core/context"
+blueprint = "phoenix-framework/core/context"
 
 # ---------- Seeds ----------
 
 [[pre-write]]
 pattern   = "priv/repo/seeds\\.exs$"
-blueprint = "phoenix-liveview/core/seeds"
+blueprint = "phoenix-framework/core/seeds"
 
 # ---------- Migrations (SQLite) ----------
 
 [[pre-write]]
 pattern   = "priv/repo/migrations/.*\\.exs$"
-blueprint = "phoenix-liveview/core/migrations-sqlite"
+blueprint = "phoenix-framework/core/migrations-sqlite"
 
 # ---------- Oban workers ----------
 
 [[pre-write]]
 pattern   = "_oban_worker(_test)?\\.(ex|exs)$"
-blueprint = "phoenix-liveview/libs/oban-worker"
+blueprint = "phoenix-framework/libs/oban-worker"
 
 # ---------- Anubis MCP tools ----------
 
 [[pre-write]]
 pattern   = "(lib|test)/platform/mcp/tools/"
-blueprint = "phoenix-liveview/libs/anubis-mcp"
+blueprint = "phoenix-framework/libs/anubis-mcp"
 
 # ---------- JavaScript / TypeScript ----------
 
 [[pre-write]]
 pattern   = "assets/js/.*\\.(ts|js)$"
-blueprint = "phoenix-liveview/javascript/javascript"
+blueprint = "phoenix-framework/javascript/javascript"
 
 [[pre-write]]
 pattern   = "assets/(vitest\\.config\\.ts|tsconfig\\.json)$"
-blueprint = "phoenix-liveview/javascript/testing-setup"
+blueprint = "phoenix-framework/javascript/testing-setup"
 
 # ============================================================================
 # Post-write: warn when a source file expected to have a test is missing one.
