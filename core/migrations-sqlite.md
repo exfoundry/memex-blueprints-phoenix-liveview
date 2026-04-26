@@ -115,3 +115,70 @@ execute """
 ```
 
 Always provide the `down` SQL as the second argument to `execute/2`.
+
+## PRAGMA in Migrations: Connection-Pinning
+
+Ecto's Migration Runner holt sich für jeden `execute`-Call eine neue Connection aus dem Pool. PRAGMA-State ist in SQLite connection-scoped — `PRAGMA foreign_keys = OFF` oder `PRAGMA writable_schema = ON` in einem `execute` haben daher keinen Effekt auf den nächsten `execute`-Call.
+
+Lösung: `@disable_ddl_transaction true` + `repo().checkout/1` um alle Statements auf dieselbe Connection zu pinnen:
+
+```elixir
+defmodule MyApp.Repo.Migrations.SomeSchemaFix do
+  use Ecto.Migration
+
+  @disable_ddl_transaction true
+
+  def up do
+    repo().checkout(fn ->
+      repo().query!("PRAGMA foreign_keys = OFF")
+      repo().query!("DROP TABLE ...")
+      repo().query!("PRAGMA foreign_keys = ON")
+    end)
+  end
+end
+```
+
+`@disable_ddl_transaction true` ist nötig, weil SQLite PRAGMA-Änderungen nicht innerhalb einer aktiven Transaktion erlaubt. `repo().checkout/1` garantiert, dass alle Queries innerhalb des Blocks auf derselben Connection landen.
+
+## Spalten-Definitionen ändern mit writable_schema
+
+SQLite unterstützt kein `ALTER COLUMN`. Für rein kosmetische Schemaänderungen — DEFAULT entfernen, NOT NULL Constraint hinzufügen oder entfernen, Constraint-Name anpassen — also alles **ohne Datenverschiebung** — kann `PRAGMA writable_schema` die CREATE TABLE-Definition in `sqlite_master` direkt anpassen:
+
+```elixir
+defmodule MyApp.Repo.Migrations.DropDefaultOnSomeColumn do
+  use Ecto.Migration
+
+  @disable_ddl_transaction true
+
+  def up do
+    repo().checkout(fn ->
+      repo().query!("PRAGMA writable_schema = ON")
+
+      repo().query!("""
+      UPDATE sqlite_master
+      SET sql = REPLACE(sql,
+        '"some_column" TEXT DEFAULT ''fallback'' NOT NULL',
+        '"some_column" TEXT NOT NULL'
+      )
+      WHERE type = 'table' AND name = 'my_table'
+      """)
+
+      repo().query!("PRAGMA writable_schema = OFF")
+
+      # Schema-Cache invalidieren
+      %{rows: [[v]]} = repo().query!("PRAGMA schema_version")
+      repo().query!("PRAGMA schema_version = #{v + 1}")
+
+      repo().query!("PRAGMA integrity_check")
+    end)
+  end
+end
+```
+
+**String-Escaping in SQLite:** Einzelne Anführungszeichen innerhalb von SQL-String-Literalen werden mit `''` (doppelt) escaped, nicht mit `\'`. Im Elixir-Heredoc ist `''` zwei aufeinanderfolgende Quotes — SQLite interpretiert das als einen `'`-Charakter.
+
+**Wann verwenden:** Nur für Änderungen die das physische Daten-Layout nicht berühren. Spalten-Reihenfolge kann damit **nicht** geändert werden — die Daten liegen positional auf Disk, der DDL-String ist nur eine Namens-Positions-Zuordnung. Falsches Reordering im DDL-String führt zu silent data corruption.
+
+**Vor dem Einsatz prüfen:** Den exakten DDL-String mit `sqlite3 priv/db/boqueteya_dev.db "SELECT sql FROM sqlite_master WHERE name='my_table';"` verifizieren — der REPLACE muss exakt matchen.
+
+**Nach dem Migrate:** `PRAGMA integrity_check` immer ausführen um Konsistenz zu bestätigen.
