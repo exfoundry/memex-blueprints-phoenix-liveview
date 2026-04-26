@@ -239,13 +239,16 @@ Tests verify the two things unique per context: `scope/2` filtering and
 `permission/3` authorization. The generated CRUD plumbing is covered by
 `ecto_context` itself — don't re-test it.
 
-**Never `async: true` on `DataCase` tests.** SQLite serializes writes, and
-concurrent transactions hit `database is locked` / `database busy` errors
-under the sandbox. Context tests always run synchronously.
+**`async: true` depends on the database backend.**
+
+- **Postgres** — `async: true` is safe. The sandbox isolates each test in its
+  own transaction; concurrent tests do not interfere.
+- **SQLite** — `async: false` always. SQLite serializes writes; concurrent
+  sandbox transactions produce `database is locked` / `database busy` errors.
 
 ```elixir
 defmodule Platform.Content.ArticlesTest do
-  use Platform.DataCase
+  use Platform.DataCase, async: true  # Postgres — safe; use async: false for SQLite
 
   alias Platform.Content.Articles
   alias Platform.Core.Scope
@@ -338,8 +341,8 @@ Never override the struct field directly.
 - Ship tests in the same commit as the context change — new function,
   new `scope/2` clause, new `permission/3` rule, new changeset → each
   needs a matching test, not "later"
-- Run DataCase tests synchronously — SQLite writes serialize; `async: true`
-  causes `database is locked` errors
+- **Postgres**: `async: true` is safe — sandbox isolates per connection
+- **SQLite**: `async: false` always — SQLite serializes writes, concurrent sandbox transactions deadlock
 - Build scopes in a `setup` block, pass via test context — not `defp`
 - One `describe` per function: `describe "list/2" do`, `describe "create/3" do`
 - Test `permission/3` directly: one `describe "permission/3"` with a test
@@ -357,8 +360,9 @@ Never override the struct field directly.
 - Don't use plain `:string` for user-facing text fields
 - Don't preload `static_belongs_to` fields via `Repo.preload` or
   `preload:` — fetch via the static context instead
-- Don't use `Scope.global_access/0` inside tests — cover admin, user,
-  and visitor scopes explicitly
+- Don't use `Scope.global_access/0` in context tests — cover admin, user,
+  and visitor (`Scope.for_user(nil)`) scopes explicitly. The global-access
+  `scope/2` clause exists for Oban workers; test it there, not here.
 - Don't test generated CRUD plumbing (Repo.insert called, broadcast
   fired, etc.) — that's `ecto_context`'s job
 - Don't use fixtures — factories produce valid structs with sensible defaults
