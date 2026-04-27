@@ -2,48 +2,48 @@
 
 ## Context
 
-Every LiveView needs a page title, a path for nav active state, and breadcrumb context. Without a standard these scatter across templates and layouts. The [`phoenix_page_meta`](https://github.com/exfoundry/phoenix_page_meta) library centralises this into a single struct with compile-time behaviour binding — forgetting `page_meta/2` is a compile warning, not a runtime crash.
+Every LiveView needs a page title, a path for nav active state, and breadcrumb context. Without a standard these scatter across templates and layouts. The [`phoenix_page_meta`](https://github.com/exfoundry/phoenix_page_meta) library centralises this into a single struct with compile-time field validation — forgetting `:title`, `:path`, or `:parent` is a `mix compile` error, not a runtime crash.
 
 ## Decision
 
-The struct lives in `PlatformWeb.PageMeta`, defined explicitly via `defstruct` (no macro hides the fields). It implements `PhoenixPageMeta.Site` for site-wide concerns (`endpoint_url/0`, `lang_path/2`) and delegates `breadcrumbs/1` and `active?/2,3` to the package. The package binds to it at compile time:
+The struct lives in `PlatformWeb.PageMeta`, defined explicitly via `defstruct` (no macro hides the fields). `use PhoenixPageMeta` injects the wiring around it: behaviour, helpers, default `base_url/0` and `lang_path/2`, and `@after_compile` field validation.
 
 ```elixir
-config :phoenix_page_meta, app_module: PlatformWeb.PageMeta
+defmodule PlatformWeb.PageMeta do
+  use PhoenixPageMeta
+
+  @enforce_keys [:title, :path]
+  defstruct [
+    :title,
+    :path,
+    :breadcrumb_title,
+    :parent,
+    :description,
+    :og_image,
+    :json_ld,
+    :canonical_path,
+    :skip_breadcrumb,
+    og_type: "website",
+    noindex: false,
+    supported_locales: [:en, :es]
+  ]
+end
 ```
+
+No `config.exs` entry. No `Application` module. The components dispatch site-wide callbacks (`base_url/0`, `lang_path/2`) via `page_meta.__struct__` — the struct itself carries the dispatch target.
 
 Every LiveView implements `page_meta/2` (`@behaviour PhoenixPageMeta.LiveView`). The `live_view` macro in `PlatformWeb` adds the behaviour and imports `assign_page_meta/1` automatically.
 
-The struct (with boqueteya-specific defaults):
-
-```elixir
-@enforce_keys [:title, :path]
-defstruct [
-  :title,             # used in <title> tag and og:title
-  :path,              # used for nav active state, canonical URL, hreflang
-  :breadcrumb_title,  # optional shorter title for breadcrumb display
-  :parent,            # parent PageMeta — builds breadcrumb trail recursively
-  :description,
-  :og_image,
-  :json_ld,
-  :canonical_path,
-  :skip_breadcrumb,   # filter out of breadcrumb (modals, overlays)
-  og_type: "website",
-  noindex: false,
-  supported_locales: [:en, :es]
-]
-```
-
-`page_meta.path` includes the locale prefix (`/en/locations/123`). Site-wide helpers in `PlatformWeb.PageMeta` and `PlatformWeb.Layouts` strip it when needed.
+`page_meta.path` includes the locale prefix (`/en/locations/123`). The macro's default `lang_path/2` does locale-prefix swap, which works for boqueteya's routing without override. `base_url/0` auto-detects `PlatformWeb.Endpoint.url()` from the `PlatformWeb.PageMeta` namespace.
 
 ## Library module structure
 
 ```
-PhoenixPageMeta                          # active?/2,3, breadcrumbs/1 (delegate)
+PhoenixPageMeta                          # __using__ macro, active?/2,3 (lib-level)
 PhoenixPageMeta.Breadcrumb               # struct + build/1
 PhoenixPageMeta.Components.Breadcrumbs   # list/1 component (slot-based, a11y)
 PhoenixPageMeta.Components.MetaTags      # default/1 component (SEO tags)
-PhoenixPageMeta.Site                     # behaviour: endpoint_url/0, lang_path/2
+PhoenixPageMeta.Site                     # behaviour: base_url/0, lang_path/2
 PhoenixPageMeta.LiveView                 # behaviour: page_meta/2 + assign_page_meta/1
 ```
 
@@ -60,8 +60,9 @@ PhoenixPageMeta.LiveView                 # behaviour: page_meta/2 + assign_page_
 
 - Don't call `assign_page_meta/1` before the assigns it depends on are set
 - Don't duplicate parent page meta structs inline — call the parent module's `page_meta/2`
-- Don't render breadcrumbs by hand. Use `<Breadcrumb.default page_meta={@page_meta} />` (project wrapper) which delegates to `<PhoenixPageMeta.Components.Breadcrumbs.list>` with project styling and home-icon-on-root behaviour
-- Don't render SEO meta tags by hand. Use `<PhoenixPageMeta.Components.MetaTags.default page_meta={@page_meta} />` in `root.html.heex`
+- Don't render breadcrumbs by hand. Use `<Breadcrumb.default page_meta={@page_meta} />` (project wrapper) which delegates to `<PhoenixPageMeta.Components.Breadcrumbs.list>` with project styling and home-icon-on-first behaviour
+- Don't render SEO meta tags by hand. Use `<MetaTags.default page_meta={@page_meta} />` (aliased to `PhoenixPageMeta.Components.MetaTags`) in `root.html.heex`
+- Don't add `config :phoenix_page_meta, ...`. The library reads no config
 
 ## Active-state helpers
 
@@ -71,6 +72,8 @@ Two project helpers in `PlatformWeb.Layouts` bridge to `PhoenixPageMeta.active?/
 - `match_path?(page_meta, path)` — alias for `is_active?(_, _, :prefix)`, used in main navigation
 
 Both accept paths *without* locale prefix; the helpers prepend it before calling `PhoenixPageMeta.active?/3`. Slash-boundary matching is inherited from the package (`/locations` matches `/locations/123` but not `/location-foo`).
+
+For direct calls in templates: `PageMeta.active?(@page_meta, ~p"/...")` works thanks to the `defdelegate`-style wrappers injected by `use PhoenixPageMeta`.
 
 ## Examples
 
