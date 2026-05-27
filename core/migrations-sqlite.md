@@ -9,6 +9,8 @@ Supports `DROP COLUMN` (3.35+) and `RENAME COLUMN` (3.25+). Column type changes 
 - **Never run `mix ecto.reset`** in dev — the dev database has irreplaceable test data. Forward-only. `MIX_ENV=test mix ecto.reset` is fine.
 - **`ON DELETE CASCADE` is fine** — but not when the referenced table needs to be dropped in a migration. SQLite cannot drop a table that other tables reference with a foreign key constraint, even with cascade. Remove the FK constraints first, drop the table, then recreate if needed.
 - **No `validate: false`** — this is a PostgreSQL feature. `Ecto.Migration.constraint/3` uses `ALTER TABLE ADD CONSTRAINT` which SQLite does not support at all.
+- **`ALTER TABLE ADD COLUMN NOT NULL` is categorically refused by SQLite** — even on an empty table, even with a non-null `DEFAULT`. Add the column nullable first, then tighten to NOT NULL via the `writable_schema` pattern below if you actually need the constraint at the DB level.
+- **Reads after DDL changes need connection pinning** — `repo().query!/2` outside `repo().checkout/1` checks out a fresh pool connection that does not see schema changes from prior `execute/1` calls in the same migration. If you do `PRAGMA table_info` / `sqlite_master` probes after a RENAME or DROP, wrap everything in `@disable_ddl_transaction true` + `repo().checkout/1`.
 - **Check constraints only at column creation** — add them inline on new columns only:
   ```elixir
   add :status, :string, check: %{name: "status_valid", expr: "status IN ('active', 'inactive')"}
