@@ -21,7 +21,8 @@ defmodule Platform.Fundamentals.Documents.Workers.PdfConverterWorker do
 
   ## Duplicate prevention
   `unique: [period: :infinity, fields: [:args]]` prevents duplicate jobs
-  while available/scheduled/executing. Status guard in perform/1 handles
+  while incomplete (available, scheduled, executing, retryable, suspended).
+  Status guard in perform/1 handles
   crash + retry scenarios.
   """
 
