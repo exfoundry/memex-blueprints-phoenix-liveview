@@ -90,7 +90,7 @@ Prevent duplicate enqueues with `unique`:
 use Oban.Worker,
   queue: :default,
   max_attempts: 3,
-  unique: [period: :infinity, fields: [:args], states: [:available, :scheduled, :executing]]
+  unique: [period: :infinity, fields: [:args], states: :incomplete]
 ```
 
 `fields: [:args]` — uniqueness is keyed on the full args map. Use a single identifying key (e.g. `document_id`) per job type to keep args minimal.
