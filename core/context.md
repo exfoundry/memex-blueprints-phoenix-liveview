@@ -105,6 +105,14 @@ a context is a red flag; the caller should have passed a scope in.
 - `import StaticContext.Schema` — makes `static_belongs_to` available
 - `@timestamps_opts [type: :utc_datetime]` — UTC timestamps by default, so
   `timestamps()` needs no arguments
+- `@primary_key {:id, :binary_id, autogenerate: true}` — UUID v4 primary keys
+- `@foreign_key_type :binary_id` — foreign keys are UUIDs too
+
+Primary and foreign keys are UUID v4 (stored as TEXT by the SQLite adapter).
+The repo also sets `migration_primary_key`/`migration_foreign_key` to
+`:binary_id` in `config/config.exs`, so generated migrations follow suit
+without per-migration annotation. Schemas using `use Ecto.Schema` directly
+(rather than the macro) must set both attributes themselves.
 
 Defined in `lib/platform.ex` alongside the `__using__` dispatch — same
 pattern as `PlatformWeb`.
