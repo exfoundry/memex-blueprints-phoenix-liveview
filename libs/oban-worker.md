@@ -28,7 +28,7 @@ defmodule Platform.Fundamentals.Documents.Workers.PdfConverterWorker do
   use Oban.Worker,
     queue: :default,
     max_attempts: 3,
-    unique: [period: :infinity, fields: [:args], states: [:available, :scheduled, :executing]]
+    unique: [period: :infinity, fields: [:args], states: :incomplete]
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"document_id" => document_id}}) do
